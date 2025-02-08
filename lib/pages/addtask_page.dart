@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:focusnet/pages/login_page.dart';
+import 'package:social_devs/pages/login_page.dart';
 
 class AddtaskPage extends StatefulWidget {
   static const String routename = '/addtask';

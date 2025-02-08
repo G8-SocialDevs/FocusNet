@@ -1,4 +1,4 @@
-package com.example.focusnet
+package com.example.social_devs
 
 import io.flutter.embedding.android.FlutterActivity
 

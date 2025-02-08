@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:focusnet/pages/login_page.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:focusnet/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:social_devs/pages/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   static const String routename = '/register';
@@ -22,35 +22,38 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
-  // final AuthService _authService = AuthService();
-
-  static const IconData currency_exchange_outlined = IconData(
-    0xf05d6,
-    fontFamily: 'MaterialIcons',
-  );
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      String username = _nameController.text;
-      String phonenumber = _phoneController.text;
-      String email = _emailController.text;
-      String password = _passwordController.text;
+      try {
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
 
-      // Aca va el código para el registro dele
-      /*
-      User? user = await _authService.registerWithEmailPassword(email, password);
-      if (user != null) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
+        // Si el registro es exitoso
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error en el registro')),
+          SnackBar(
+              content:
+                  Text('Registro exitoso: Bienvenido ${_nameController.text}')),
+        );
+
+        // Redirigir al usuario a la pantalla de login
+        Navigator.pushReplacementNamed(context, LoginPage.routename);
+      } catch (e) {
+        String errorMessage = 'Error en el registro';
+        if (e is FirebaseAuthException) {
+          if (e.code == 'email-already-in-use') {
+            errorMessage = 'El correo ya está registrado';
+          } else if (e.code == 'weak-password') {
+            errorMessage = 'La contraseña es muy débil';
+          }
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
         );
       }
-      */
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registro exitoso: Bienvenido $username')),
-      );
     }
   }
 
@@ -73,8 +76,9 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                  child: Image.asset('assets/images/focusnet_logo.png',
-                      width: 200, height: 200)),
+                child: Image.asset('assets/images/focusnet_logo.png',
+                    width: 200, height: 200),
+              ),
               Center(
                 child: Column(
                   children: [
@@ -168,6 +172,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Ingrese una contraseña';
+                        } else if (value.length < 6) {
+                          return 'La contraseña debe tener al menos 6 caracteres';
                         }
                         return null;
                       },
@@ -212,7 +218,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Navigator.pushReplacementNamed(context, '/login');
+                            Navigator.pushReplacementNamed(
+                                context, LoginPage.routename);
                           },
                       ),
                     ],
