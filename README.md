@@ -8,4 +8,3 @@ FocusNet es una red social diseñada para todas aquellas personas que desean org
 - Chiara Arcos, Bryan Miguel
 - Laos Carrasco, Rafael Alonso
 - Marcelo Salinas, Moises Enrique
-- Mauricio Montes, Jorge Luis
