@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:social_devs/pages/MainScreen.dart';
-import 'package:social_devs/pages/register_page.dart';
+import 'package:focusnet/pages/MainScreen.dart';
+import 'package:focusnet/pages/register_page.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
   static const String routename = '/login';
@@ -23,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       try {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
+          email: _emailController.text,
           password: _passwordController.text,
         );
 
@@ -31,13 +35,8 @@ class _LoginPageState extends State<LoginPage> {
           const SnackBar(content: Text('Inicio de sesión exitoso')),
         );
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MainScreen(initialIndex: 0), // Asegura que HomePage sea la primera vista
-            ),
-          );
-
+        // Llamar al endpoint después de la autenticación exitosa
+        await _fetchUserData(_emailController.text, _passwordController.text);
       } catch (e) {
         String errorMessage = 'Error en el inicio de sesión';
         if (e is FirebaseAuthException) {
@@ -56,6 +55,55 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _fetchUserData(String email, String password) async {
+    final Uri uri = Uri.parse(
+      'https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/users/login?email=$email&password=$password',
+    );
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: <String, String>{
+          'accept': 'application/json',
+        },
+        body: '',
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (!data.containsKey('UserID')) {
+          throw Exception('Faltan datos en la respuesta de la API');
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('UserID', data['UserID']);
+        await prefs.setString('FirstName', data['FirstName'] ?? '');
+        await prefs.setString('LastName', data['LastName'] ?? '');
+        await prefs.setString('UserName', data['UserName'] ?? '');
+        await prefs.setString('UserImage', data['UserImage'] ?? '');
+        await prefs.setString('Bio', data['Bio'] ?? '');
+        await prefs.setString('PhoneNumber', data['PhoneNumber'] ?? '');
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                MainScreen(initialIndex: 0, userId: data['UserID']),
+          ),
+        );
+      } else {
+        throw Exception('Error al obtener datos del usuario. '
+            'Código: ${response.statusCode}, '
+            'Respuesta: ${response.body}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,12 +116,16 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: Image.asset('assets/images/focusnet_logo.png', width: 200, height: 200),
+                child: Image.asset('assets/images/focusnet_logo.png',
+                    width: 200, height: 200),
               ),
               const Center(
                 child: Text(
                   'Iniciar sesión',
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF882ACB)),
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF882ACB)),
                 ),
               ),
               const SizedBox(height: 30),
@@ -86,7 +138,9 @@ class _LoginPageState extends State<LoginPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Ingrese su correo electrónico';
-                  } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value.trim())) {
+                  } else if (!RegExp(
+                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                      .hasMatch(value.trim())) {
                     return 'Ingrese un correo válido';
                   }
                   return null;
@@ -101,7 +155,8 @@ class _LoginPageState extends State<LoginPage> {
                   labelText: 'Contraseña',
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                        _obscureText ? Icons.visibility_off : Icons.visibility),
                     onPressed: () {
                       setState(() {
                         _obscureText = !_obscureText;
@@ -150,7 +205,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Navigator.pushReplacementNamed(context, RegisterPage.routename);
+                            Navigator.pushReplacementNamed(
+                                context, RegisterPage.routename);
                           },
                       ),
                     ],

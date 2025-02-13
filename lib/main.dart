@@ -1,13 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:social_devs/pages/activity_page.dart';
-import 'package:social_devs/pages/calendar_page.dart';
-import 'package:social_devs/pages/chat_page.dart';
-import 'package:social_devs/pages/login_page.dart';
-import 'package:social_devs/pages/perfil_page.dart';
-import 'package:social_devs/pages/register_page.dart';
-import 'package:social_devs/pages/addtask_page.dart';
-import 'package:social_devs/pages/home_page.dart';
+import 'package:focusnet/pages/activity_page.dart';
+import 'package:focusnet/pages/calendar_page.dart';
+import 'package:focusnet/pages/chat_page.dart';
+import 'package:focusnet/pages/login_page.dart';
+import 'package:focusnet/pages/perfil_page.dart';
+import 'package:focusnet/pages/register_page.dart';
+import 'package:focusnet/pages/addtask_page.dart';
+import 'package:focusnet/pages/home_page.dart';
+import 'package:focusnet/pages/mainScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,18 +26,60 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FocusNet',
       initialRoute: LoginPage.routename,
-      routes: {
-        // WelcomePage.routename: (context) => const WelcomePage(),
-        HomePage.routeName: (context) => const HomePage(),
-        LoginPage.routename: (context) => const LoginPage(),
-        RegisterPage.routename: (context) => const RegisterPage(),
-        AddtaskPage.routename: (context) => const AddtaskPage(),
-        ActivityPage.routeName: (context) => const ActivityPage(),
-        ChatPage.routeName: (context) => const ChatPage(),
-        CalendarPage.routeName: (context) => const CalendarPage(),
-        PerfilPage.routeName: (context) => const PerfilPage(),
-        // '/main': (context) => const MainScreen(),
-        // '/home': (context) => const HomePage(),
+      onGenerateRoute: (settings) {
+        final args = settings.arguments
+            as Map<String, dynamic>?; // Extraemos los argumentos generales
+        final int userId =
+            args?['userId'] ?? 0; // Si no se proporciona, asignamos 0
+
+        switch (settings.name) {
+          case HomePage.routeName:
+            return MaterialPageRoute(
+              builder: (context) => HomePage(userId: userId),
+            );
+
+          case MainScreen.routeName:
+            return MaterialPageRoute(
+              builder: (context) => MainScreen(
+                userId: userId,
+                initialIndex: args?['initialIndex'] ?? 0,
+              ),
+            );
+
+          case AddtaskPage.routename:
+            return MaterialPageRoute(
+              builder: (context) => AddtaskPage(userId: userId),
+            );
+
+          case CalendarPage.routeName:
+            return MaterialPageRoute(
+              builder: (context) => CalendarPage(userId: userId),
+            );
+
+          case PerfilPage.routeName:
+            return MaterialPageRoute(
+              builder: (context) => PerfilPage(userId: userId),
+            );
+
+          case ChatPage.routeName:
+            return MaterialPageRoute(
+              builder: (context) => ChatPage(userId: userId),
+            );
+
+          case LoginPage.routename:
+            return MaterialPageRoute(builder: (context) => const LoginPage());
+
+          case RegisterPage.routename:
+            return MaterialPageRoute(
+                builder: (context) => const RegisterPage());
+
+          case ActivityPage.routeName:
+            return MaterialPageRoute(
+                builder: (context) => const ActivityPage());
+
+          default:
+            return MaterialPageRoute(builder: (context) => const LoginPage());
+        }
       },
     );
   }

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
   static const String routeName = '/home';
+  final int userId;
 
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -11,10 +12,10 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Publicaciones'),
       ),
-      body: const Center(
+      body: Center(
         child: Text(
-          'Prueba',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          'Bienvenido, tu ID es: $userId',
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
     );

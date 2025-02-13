@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class ChatPage extends StatelessWidget {
   static const String routeName = '/chat';
+  final int userId;
 
-  const ChatPage({Key? key}) : super(key: key);
+  const ChatPage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {

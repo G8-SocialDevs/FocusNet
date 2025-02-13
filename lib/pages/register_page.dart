@@ -3,7 +3,10 @@ import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:social_devs/pages/login_page.dart';
+import 'package:focusnet/pages/login_page.dart';
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
   static const String routename = '/register';
@@ -32,6 +35,9 @@ class _RegisterPageState extends State<RegisterPage> {
           password: _passwordController.text,
         );
 
+        // Llamada al endpoint después del registro en Firebase
+        await _sendUserDataToBackend();
+
         // Si el registro es exitoso
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -55,6 +61,61 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     }
+  }
+
+  Future<void> _sendUserDataToBackend() async {
+    const String url =
+        "https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/users/create_user";
+
+    Map<String, dynamic> userData = {
+      "Email": _emailController.text,
+      "Password": _passwordController.text,
+      "FirstName": _nameController.text,
+      "LastName": "None",
+      "UserName": "None",
+      "UserImage": "None",
+      "Bio": "None",
+      "PhoneNumber": _phoneController.text,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          "accept": "application/json",
+        },
+        body: jsonEncode(userData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Usuario registrado con ID: ${responseData["UserID"]}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Error en el registro: ${response.statusCode} - ${response.body}')),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error de conexión: $error')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override

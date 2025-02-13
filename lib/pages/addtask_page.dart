@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-
-import 'package:social_devs/pages/login_page.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AddtaskPage extends StatefulWidget {
   static const String routename = '/addtask';
+  final int userId;
 
-  const AddtaskPage({super.key});
+  const AddtaskPage({super.key, required this.userId});
 
   @override
   _AddtaskPageState createState() => _AddtaskPageState();
@@ -58,18 +59,6 @@ class _AddtaskPageState extends State<AddtaskPage> {
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       String title = _titleController.text;
-
-      // Aca va el código para el registro dele
-      /*
-      User? user = await _authService.registerWithEmailPassword(email, password);
-      if (user != null) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error en el registro')),
-        );
-      }
-      */
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registro exitoso de la actividad: $title')),

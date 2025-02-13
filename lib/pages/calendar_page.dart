@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 
 class CalendarPage extends StatefulWidget {
   static const String routeName = '/calendar';
+  final int userId;
 
-  const CalendarPage({Key? key}) : super(key: key);
+  const CalendarPage({super.key, required this.userId});
 
   @override
   _CalendarPageState createState() => _CalendarPageState();
