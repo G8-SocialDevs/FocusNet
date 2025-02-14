@@ -73,17 +73,19 @@ class _AddtaskPageState extends State<AddtaskPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Título fijo con fondo morado
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            color: Color(0xFF882ACB),
-            child: const Center(
-              child: Text(
-                "Crear actividad",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+          SafeArea(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              color: Color(0xFF882ACB),
+              child: const Center(
+                child: Text(
+                  "Crear actividad",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
