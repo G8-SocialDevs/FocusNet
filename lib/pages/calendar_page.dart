@@ -29,8 +29,11 @@ class _CalendarPageState extends State<CalendarPage> {
   /// Obtiene las tareas del endpoint task/get_tasks
   Future<void> fetchTasks() async {
     try {
-      final response = await http.get(Uri.parse(
-          'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/get_tasks'));
+      final response = await http.get(
+        Uri.parse(
+            'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/list_user_tasks/${widget.userId}'),
+        headers: {'accept': 'application/json'},
+      );
       if (response.statusCode == 200) {
         setState(() {
           tasks = List<Map<String, dynamic>>.from(json.decode(response.body));
@@ -98,98 +101,79 @@ class _CalendarPageState extends State<CalendarPage> {
           SafeArea(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
-              color: const Color(0xFF882ACB),
-              child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween, // Alinea los elementos
-                children: [
-                  const Text(
-                    "Calendario de actividades",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              color: Color(0xFF882ACB),
+              child: const Center(
+                child: Text(
+                  "Mi Calendario",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () {
-                      fetchTasks();
-                      fetchCalendarData();
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
           ),
 
           /// Calendario para seleccionar fecha
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16.0),
-            child: TableCalendar(
-              focusedDay: selectedDate,
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              calendarFormat: calendarFormat,
-              selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  selectedDate = selectedDay;
-                });
-              },
-              onFormatChanged: (format) {
-                setState(() {
-                  calendarFormat = format;
-                });
-              },
-              headerStyle: HeaderStyle(
-                formatButtonVisible: true,
-                titleCentered: true,
-                titleTextStyle: const TextStyle(
-                  color: Colors.white, // Color del texto del encabezado
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              padding:
+                  const EdgeInsets.symmetric(vertical: 20, horizontal: 16.0),
+              child: TableCalendar(
+                focusedDay: selectedDate,
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                calendarFormat: calendarFormat,
+                selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    selectedDate = selectedDay;
+                  });
+                },
+                onFormatChanged: (format) {
+                  setState(() {
+                    calendarFormat = format;
+                  });
+                },
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: true,
+                  titleCentered: true,
+                  titleTextStyle: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  formatButtonTextStyle: const TextStyle(color: Colors.white),
+                  leftChevronIcon:
+                      const Icon(Icons.chevron_left, color: Colors.white),
+                  rightChevronIcon:
+                      const Icon(Icons.chevron_right, color: Colors.white),
+                  formatButtonDecoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white),
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                formatButtonTextStyle: const TextStyle(
-                    color:
-                        Colors.white), // Texto del botón de formato en blanco
-                leftChevronIcon: const Icon(Icons.chevron_left,
-                    color: Colors.white), // Flecha izquierda en blanco
-                rightChevronIcon: const Icon(Icons.chevron_right,
-                    color: Colors.white), // Flecha derecha en blanco
-                formatButtonDecoration: BoxDecoration(
-                  color: Colors.transparent, // Hace que el botón no tenga fondo
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color:
-                          Colors.white), // Borde blanco si quieres resaltarlo
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: const Color.fromRGBO(183, 127, 224, 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Color(0xFF882ACB),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedTextStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(
-                      0xFF1E3A8A), // Cambia el fondo del encabezado a rosado
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: const Color.fromRGBO(
-                      183, 127, 224, 0.7), // Color de fondo para hoy
-                  shape: BoxShape.circle, // Mantiene la forma redonda
-                ),
-                selectedDecoration: BoxDecoration(
-                  color: Color(
-                      0xFF882ACB), // Color sólido para la fecha seleccionada
-                  shape: BoxShape.circle,
-                ),
-                selectedTextStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color:
-                      Colors.white, // Texto de la fecha seleccionada en blanco
-                ),
-              ),
-            ),
-          ),
+              )),
 
           /// Lista de tareas
           Expanded(
@@ -214,20 +198,52 @@ class _CalendarPageState extends State<CalendarPage> {
     int hour = calendarData[calendarID]?['Hour'] ?? 23;
     int minute = calendarData[calendarID]?['Minute'] ?? 59;
 
+    // Definir el color según la prioridad de la tarea
+    Color containerColor;
+    switch (task['Priority']) {
+      case 0:
+        containerColor = Colors.yellow; // Prioridad 0 -> Amarillo
+        break;
+      case 1:
+        containerColor = Colors.orange; // Prioridad 1 -> Naranja
+        break;
+      case 2:
+        containerColor = Colors.red; // Prioridad 2 -> Rojo
+        break;
+      default:
+        containerColor = const Color.fromARGB(
+            255, 66, 148, 241); // Si no tiene prioridad, blanco
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Icon(Icons.event, color: Colors.blue), // Ícono de actividad
-            Text(task['Title'] ?? 'Sin título', style: TextStyle(fontSize: 18)),
-            Text(
-              "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
+      child: Container(
+        decoration: BoxDecoration(
+          color:
+              containerColor, // Establecer el color de fondo según la prioridad
+          borderRadius: BorderRadius.circular(
+              12), // Bordes redondeados con un radio de 16
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.event, color: Colors.white), // Ícono de actividad
+              Text(
+                task['Title'] ?? 'Sin título',
+                style: TextStyle(
+                    fontSize: 18, color: Colors.white), // Texto blanco
+              ),
+              Text(
+                "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white), // Texto blanco
+              ),
+            ],
+          ),
         ),
       ),
     );

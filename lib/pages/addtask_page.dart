@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class AddtaskPage extends StatefulWidget {
   static const String routename = '/addtask';
@@ -20,6 +21,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
   final TextEditingController _endTimeController = TextEditingController();
+  int _selectedPriorityNum = 0;
+
+  String _selectedPriorityTxt = "Media";
   bool repeatActivity = false;
   String selectedFrequency = 'diaria';
   List<bool> selectedDays = [false, false, false, false, false, false, false];
@@ -27,8 +31,6 @@ class _AddtaskPageState extends State<AddtaskPage> {
 
   final List<String> daysLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   final List<String> friends = ['Amigo 1', 'Amigo 2', 'Amigo 3'];
-
-  String _selectedPriority = "Media";
 
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
@@ -56,14 +58,89 @@ class _AddtaskPageState extends State<AddtaskPage> {
     }
   }
 
-  Future<void> _register() async {
+  String _formatToISO8601(String date, String time) {
+    // Convertir la fecha de dd/MM/yyyy a DateTime
+    List<String> dateParts = date.split('/');
+    int day = int.parse(dateParts[0]);
+    int month = int.parse(dateParts[1]);
+    int year = int.parse(dateParts[2]);
+
+    // Convertir la hora de formato 12h a 24h
+    TimeOfDay parsedTime = TimeOfDayFormat(context, time);
+    DateTime dateTime =
+        DateTime(year, month, day, parsedTime.hour, parsedTime.minute);
+
+    // Convertir a UTC y formatear en ISO 8601
+    return DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(dateTime.toUtc());
+  }
+
+  TimeOfDay TimeOfDayFormat(BuildContext context, String time) {
+    print("Valor de 'time' antes de parsear: '$time'");
+
+    time = time.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    try {
+      final parts =
+          time.split(RegExp(r'[:\s]')); // Divide en horas, minutos y AM/PM
+      int hour = int.parse(parts[0]);
+      int minute = int.parse(parts[1]);
+      String period = parts[2].toUpperCase();
+
+      if (period == "PM" && hour != 12) {
+        hour += 12;
+      } else if (period == "AM" && hour == 12) {
+        hour = 0;
+      }
+
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      print("Error al parsear la hora: '$time'");
+      rethrow;
+    }
+  }
+
+  Future<bool> _register() async {
     if (_formKey.currentState!.validate()) {
       String title = _titleController.text;
+      String description = _descriptionController.text;
+      int priority = _selectedPriorityNum;
+      String startTimestamp =
+          _formatToISO8601(_dateController.text, _startTimeController.text);
+      String endTimestamp =
+          _formatToISO8601(_dateController.text, _endTimeController.text);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registro exitoso de la actividad: $title')),
+      final url = Uri.parse(
+          'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/create_task');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "CreatorID": widget.userId,
+          "Title": title,
+          "Description": description,
+          "Priority": priority,
+          "StartTimestamp": startTimestamp,
+          "EndTimestamp": endTimestamp,
+          "RecurringStart": false
+        }),
       );
+
+      if (response.statusCode == 200) {
+        print("Tarea creada con éxito: ${response.body}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registro exitoso de la actividad: $title')),
+        );
+        return true; // Éxito
+      } else {
+        print("Error al crear la tarea: ${response.statusCode}");
+        return false; // Falla
+      }
     }
+    return false; // Si la validación falla
   }
 
   @override
@@ -421,7 +498,18 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                     backgroundColor:
                                         const Color.fromRGBO(41, 190, 128, 1),
                                   ),
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    bool success = await _register();
+                                    if (success) {
+                                      _titleController.clear();
+                                      _descriptionController.clear();
+                                      _dateController.clear();
+                                      _startTimeController.clear();
+                                      _endTimeController.clear();
+                                      setState(
+                                          () {}); // Refresca la UI si es necesario
+                                    }
+                                  },
                                   icon: Icon(
                                     Icons.add,
                                     color: Colors.white,
@@ -456,12 +544,25 @@ class _AddtaskPageState extends State<AddtaskPage> {
       child: ElevatedButton(
         onPressed: () {
           setState(() {
-            _selectedPriority = text;
+            _selectedPriorityTxt = text;
+            switch (text) {
+              case "Baja":
+                _selectedPriorityNum = 0;
+                break;
+              case "Media":
+                _selectedPriorityNum = 1;
+                break;
+              case "Alta":
+                _selectedPriorityNum = 2;
+                break;
+              default:
+                _selectedPriorityNum = -1;
+            }
           });
         },
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              _selectedPriority == text ? color : color.withOpacity(0.6),
+              _selectedPriorityTxt == text ? color : color.withOpacity(0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
