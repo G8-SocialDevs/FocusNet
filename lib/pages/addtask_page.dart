@@ -475,8 +475,13 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                         const Color.fromRGBO(182, 15, 15, 1),
                                   ),
                                   onPressed: () {
-                                    Navigator.pushReplacementNamed(
-                                        context, '/login');
+                                    _titleController.clear();
+                                    _descriptionController.clear();
+                                    _dateController.clear();
+                                    _startTimeController.clear();
+                                    _endTimeController.clear();
+                                    _selectedPriorityTxt = "Media";
+                                    setState(() {});
                                   },
                                   icon: Icon(
                                     Icons.delete,
@@ -506,8 +511,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       _dateController.clear();
                                       _startTimeController.clear();
                                       _endTimeController.clear();
-                                      setState(
-                                          () {}); // Refresca la UI si es necesario
+                                      _selectedPriorityTxt = "Media";
+                                      setState(() {});
                                     }
                                   },
                                   icon: Icon(

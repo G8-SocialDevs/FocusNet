@@ -18,6 +18,8 @@ class _CalendarPageState extends State<CalendarPage> {
   Map<int, Map<String, dynamic>> calendarData = {};
   DateTime selectedDate = DateTime.now();
   CalendarFormat calendarFormat = CalendarFormat.month;
+  Set<DateTime> taskDays = {};
+  Map<DateTime, int> taskCountByDay = {};
 
   @override
   void initState() {
@@ -35,8 +37,11 @@ class _CalendarPageState extends State<CalendarPage> {
         headers: {'accept': 'application/json'},
       );
       if (response.statusCode == 200) {
+        List<Map<String, dynamic>> loadedTasks =
+            List<Map<String, dynamic>>.from(json.decode(response.body));
         setState(() {
-          tasks = List<Map<String, dynamic>>.from(json.decode(response.body));
+          tasks = loadedTasks;
+          updateTaskDays();
         });
       } else {
         throw Exception('Error al cargar las tareas');
@@ -55,6 +60,7 @@ class _CalendarPageState extends State<CalendarPage> {
         List<dynamic> data = json.decode(response.body);
         setState(() {
           calendarData = {for (var item in data) item['CalendarID']: item};
+          updateTaskDays();
         });
       } else {
         throw Exception('Error al cargar datos del calendario');
@@ -62,6 +68,31 @@ class _CalendarPageState extends State<CalendarPage> {
     } catch (e) {
       print('Error al obtener datos del calendario: $e');
     }
+  }
+
+  /// Actualiza los días que tienen tareas y cuántas tareas hay en cada uno
+  void updateTaskDays() {
+    Map<DateTime, int> tempTaskCount = {};
+
+    for (var task in tasks) {
+      int? calendarID = task['StartTimestampID'];
+      if (calendarID != null && calendarData.containsKey(calendarID)) {
+        DateTime taskDate = DateTime(
+          calendarData[calendarID]!['Year'],
+          calendarData[calendarID]!['Month'],
+          calendarData[calendarID]!['Day'],
+        );
+
+        DateTime normalizedDate = DateTime(taskDate.year, taskDate.month,
+            taskDate.day); // Normalizar sin horas
+        tempTaskCount[normalizedDate] =
+            (tempTaskCount[normalizedDate] ?? 0) + 1;
+      }
+    }
+
+    setState(() {
+      taskCountByDay = tempTaskCount;
+    });
   }
 
   /// Filtra y ordena las tareas por la fecha seleccionada
@@ -118,62 +149,96 @@ class _CalendarPageState extends State<CalendarPage> {
 
           /// Calendario para seleccionar fecha
           Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 20, horizontal: 16.0),
-              child: TableCalendar(
-                focusedDay: selectedDate,
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                calendarFormat: calendarFormat,
-                selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    selectedDate = selectedDay;
-                  });
-                },
-                onFormatChanged: (format) {
-                  setState(() {
-                    calendarFormat = format;
-                  });
-                },
-                headerStyle: HeaderStyle(
-                  formatButtonVisible: true,
-                  titleCentered: true,
-                  titleTextStyle: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  formatButtonTextStyle: const TextStyle(color: Colors.white),
-                  leftChevronIcon:
-                      const Icon(Icons.chevron_left, color: Colors.white),
-                  rightChevronIcon:
-                      const Icon(Icons.chevron_right, color: Colors.white),
-                  formatButtonDecoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white),
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16.0),
+            child: TableCalendar(
+              focusedDay: selectedDate,
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              calendarFormat: calendarFormat,
+              selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  selectedDate = selectedDay;
+                });
+              },
+              onFormatChanged: (format) {
+                setState(() {
+                  calendarFormat = format;
+                });
+              },
+              headerStyle: HeaderStyle(
+                formatButtonVisible: true,
+                titleCentered: true,
+                titleTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                calendarStyle: CalendarStyle(
-                  todayDecoration: BoxDecoration(
-                    color: const Color.fromRGBO(183, 127, 224, 0.7),
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Color(0xFF882ACB),
-                    shape: BoxShape.circle,
-                  ),
-                  selectedTextStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                formatButtonTextStyle: const TextStyle(color: Colors.white),
+                leftChevronIcon:
+                    const Icon(Icons.chevron_left, color: Colors.white),
+                rightChevronIcon:
+                    const Icon(Icons.chevron_right, color: Colors.white),
+                formatButtonDecoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white),
                 ),
-              )),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: const Color.fromRGBO(183, 127, 224, 0.7),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Color(0xFF882ACB),
+                  shape: BoxShape.circle,
+                ),
+                selectedTextStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+
+              /// Muestra un indicador en los días con tareas
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, date, events) {
+                  DateTime normalizedDate =
+                      DateTime(date.year, date.month, date.day);
+                  if (taskCountByDay.containsKey(normalizedDate)) {
+                    int taskCount = taskCountByDay[normalizedDate]!;
+                    return Positioned(
+                      right: 1,
+                      bottom: 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 95, 207, 198),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints:
+                            BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '$taskCount', // Mostrar el número de tareas
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ),
 
           /// Lista de tareas
           Expanded(
