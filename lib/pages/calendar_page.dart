@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
+import 'package:focusnet/pages/mytasks_page.dart';
+import 'package:focusnet/pages/myinvitations_page.dart';
 
 class CalendarPage extends StatefulWidget {
   static const String routeName = '/calendar';
@@ -146,6 +148,67 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ),
           ),
+          SizedBox(height: 20),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Container(
+                width: 180,
+                height: 42,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF512DA8),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MytasksPage(userId: widget.userId),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.task,
+                    color: Colors.white,
+                    size: 20.0,
+                  ),
+                  label: Text(
+                    "Actividades",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              ),
+              Container(
+                width: 180,
+                height: 42,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF512DA8),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MyinvitationsPage(userId: widget.userId),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.mail,
+                    color: Colors.white,
+                    size: 20.0,
+                  ),
+                  label: Text(
+                    "Invitaciones",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              )
+            ],
+          ),
 
           /// Calendario para seleccionar fecha
           Padding(
@@ -267,13 +330,13 @@ class _CalendarPageState extends State<CalendarPage> {
     Color containerColor;
     switch (task['Priority']) {
       case 0:
-        containerColor = Colors.yellow; // Prioridad 0 -> Amarillo
+        containerColor = Colors.amber.shade700; // Prioridad 0 -> Amarillo
         break;
       case 1:
-        containerColor = Colors.orange; // Prioridad 1 -> Naranja
+        containerColor = Colors.deepOrange; // Prioridad 1 -> Naranja
         break;
       case 2:
-        containerColor = Colors.red; // Prioridad 2 -> Rojo
+        containerColor = Colors.red.shade800; // Prioridad 2 -> Rojo
         break;
       default:
         containerColor = const Color.fromARGB(

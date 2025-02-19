@@ -80,17 +80,13 @@ class _AddtaskPageState extends State<AddtaskPage> {
     time = time.replaceAll(RegExp(r'\s+'), ' ').trim();
 
     try {
-      final parts =
-          time.split(RegExp(r'[:\s]')); // Divide en horas, minutos y AM/PM
+      final parts = time.split(':'); // Solo divide en horas y minutos
+      if (parts.length != 2) {
+        throw FormatException("Formato de hora incorrecto");
+      }
+
       int hour = int.parse(parts[0]);
       int minute = int.parse(parts[1]);
-      String period = parts[2].toUpperCase();
-
-      if (period == "PM" && hour != 12) {
-        hour += 12;
-      } else if (period == "AM" && hour == 12) {
-        hour = 0;
-      }
 
       return TimeOfDay(hour: hour, minute: minute);
     } catch (e) {

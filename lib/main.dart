@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:focusnet/pages/activity_page.dart';
 import 'package:focusnet/pages/calendar_page.dart';
 import 'package:focusnet/pages/chat_page.dart';
 import 'package:focusnet/pages/login_page.dart';
@@ -72,10 +71,6 @@ class MyApp extends StatelessWidget {
           case RegisterPage.routename:
             return MaterialPageRoute(
                 builder: (context) => const RegisterPage());
-
-          case ActivityPage.routeName:
-            return MaterialPageRoute(
-                builder: (context) => const ActivityPage());
 
           default:
             return MaterialPageRoute(builder: (context) => const LoginPage());
