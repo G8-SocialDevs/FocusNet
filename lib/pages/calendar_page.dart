@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focusnet/pages/task_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
@@ -343,34 +344,44 @@ class _CalendarPageState extends State<CalendarPage> {
             255, 66, 148, 241); // Si no tiene prioridad, blanco
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color:
-              containerColor, // Establecer el color de fondo según la prioridad
-          borderRadius: BorderRadius.circular(
-              12), // Bordes redondeados con un radio de 16
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(Icons.event, color: Colors.white), // Ícono de actividad
-              Text(
-                task['Title'] ?? 'Sin título',
-                style: TextStyle(
-                    fontSize: 18, color: Colors.white), // Texto blanco
-              ),
-              Text(
-                "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white), // Texto blanco
-              ),
-            ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TaskPage(task: task),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color:
+                containerColor, // Establecer el color de fondo según la prioridad
+            borderRadius: BorderRadius.circular(
+                12), // Bordes redondeados con un radio de 16
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(Icons.event, color: Colors.white), // Ícono de actividad
+                Text(
+                  task['Title'] ?? 'Sin título',
+                  style: TextStyle(
+                      fontSize: 18, color: Colors.white), // Texto blanco
+                ),
+                Text(
+                  "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white), // Texto blanco
+                ),
+              ],
+            ),
           ),
         ),
       ),

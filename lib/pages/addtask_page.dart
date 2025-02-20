@@ -205,7 +205,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              "Nota",
+                              "Descripción",
                               style: TextStyle(fontSize: 18),
                             ),
                           ),
@@ -215,7 +215,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             controller: _descriptionController,
                             maxLines: 4,
                             decoration: InputDecoration(
-                              hintText: "Nota",
+                              hintText: "Descripción",
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
@@ -241,9 +241,10 @@ class _AddtaskPageState extends State<AddtaskPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildPriorityButton("Baja", Colors.yellow),
-                              _buildPriorityButton("Media", Colors.orange),
-                              _buildPriorityButton("Alta", Colors.red),
+                              _buildPriorityButton(
+                                  "Baja", Colors.amber.shade700),
+                              _buildPriorityButton("Media", Colors.deepOrange),
+                              _buildPriorityButton("Alta", Colors.red.shade800),
                             ],
                           ),
                           const SizedBox(height: 20),
