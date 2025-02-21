@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:focusnet/pages/edittask_page.dart';
 
 class TaskPage extends StatefulWidget {
   static const String routeName = '/task';
@@ -36,6 +37,58 @@ class _TaskPageState extends State<TaskPage> {
     } catch (e) {
       print('Error al obtener datos del calendario: $e');
     }
+  }
+
+  Future<bool> deleteTask(int taskId) async {
+    final url = Uri.parse(
+        'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/delete/$taskId');
+
+    try {
+      final response = await http.delete(url, headers: {
+        'accept': 'application/json',
+      });
+
+      if (response.statusCode == 200) {
+        print("Tarea eliminada correctamente.");
+        return true;
+      } else {
+        print("Error al eliminar la tarea: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error de conexión: $e");
+      return false;
+    }
+  }
+
+  void _confirmDeleteTask(BuildContext context, int taskId, Function onDelete) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirmar eliminación"),
+          content: Text("¿Estás seguro de que deseas eliminar esta tarea?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar diálogo
+              },
+              child: Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Cerrar diálogo
+                bool success = await deleteTask(taskId);
+                if (success) {
+                  onDelete(); // Refrescar la lista después de eliminar
+                }
+              },
+              child: Text("Eliminar", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -133,7 +186,15 @@ class _TaskPageState extends State<TaskPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromRGBO(182, 15, 15, 1),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          _confirmDeleteTask(context, widget.task['TaskID'],
+                              () {
+                            setState(() {
+                              Navigator.pop(
+                                  context); // Vuelve a cargar la lista de tareas
+                            });
+                          });
+                        },
                         icon: const Icon(
                           Icons.delete,
                           color: Colors.white,
@@ -153,7 +214,15 @@ class _TaskPageState extends State<TaskPage> {
                           backgroundColor:
                               const Color.fromRGBO(26, 151, 208, 1),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditTaskPage(task: widget.task),
+                            ),
+                          );
+                        },
                         icon: const Icon(
                           Icons.edit,
                           color: Colors.white,

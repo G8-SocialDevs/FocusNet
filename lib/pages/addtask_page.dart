@@ -182,7 +182,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               "Nombre de la actividad",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -206,7 +207,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               "Descripción",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -234,7 +236,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               "Nivel de Priorización",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -254,7 +257,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               "Fecha",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -289,7 +293,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         "Hora de Inicio",
-                                        style: TextStyle(fontSize: 18),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     const SizedBox(height: 15),
@@ -325,7 +331,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         "Hora de fin",
-                                        style: TextStyle(fontSize: 18),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     const SizedBox(height: 15),
@@ -361,7 +369,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text("Repetir actividad",
-                                  style: TextStyle(fontSize: 18)),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
                               Switch(
                                 value: repeatActivity,
                                 onChanged: (value) {
@@ -382,7 +392,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
                               children: [
                                 //Frecuencia periodica
                                 Text("Frecuencia periódica",
-                                    style: TextStyle(fontSize: 18)),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
                                 SizedBox(height: 10),
                                 DropdownButtonFormField<String>(
                                   value: selectedFrequency,
@@ -409,7 +421,9 @@ class _AddtaskPageState extends State<AddtaskPage> {
 
                                 //Dias
                                 Text("Frecuencia en días",
-                                    style: TextStyle(fontSize: 18)),
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 15),
                                 ToggleButtons(
                                   children: daysLabels
@@ -440,7 +454,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text("Amigo(s) a invitar",
-                                style: TextStyle(fontSize: 18)),
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                           ),
 
                           const SizedBox(height: 15),
@@ -458,7 +473,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                               );
                             }),
                           ),
-                          SizedBox(height: 16),
+                          SizedBox(height: 20),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
