@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:focusnet/pages/task_page.dart';
+import 'package:focusnet/pages/recurring_page.dart';
 
 class MytasksPage extends StatefulWidget {
   static const String routeName = '/mytasks';
@@ -13,7 +14,9 @@ class MytasksPage extends StatefulWidget {
   _MytasksPageState createState() => _MytasksPageState();
 }
 
-class _MytasksPageState extends State<MytasksPage> {
+class _MytasksPageState extends State<MytasksPage>
+    with SingleTickerProviderStateMixin {
+  int selectedIndex = 0;
   List<Map<String, dynamic>> tasks = [];
   Map<int, Map<String, dynamic>> calendarData = {};
   String searchQuery = "";
@@ -97,14 +100,28 @@ class _MytasksPageState extends State<MytasksPage> {
       });
   }
 
-  List<Map<String, dynamic>> getFilteredTasks() {
-    return getSortedTasks().where((task) {
+  List<Map<String, dynamic>> getFilteredTasks(bool recurring) {
+    List<Map<String, dynamic>> filteredTasks = getSortedTasks()
+        .where((task) => task['RecurringStart'] == recurring)
+        .where((task) {
       final titleMatch =
           task['Title'].toLowerCase().contains(searchQuery.toLowerCase());
       final priorityMatch =
           selectedPriority == null || task['Priority'] == selectedPriority;
       return titleMatch && priorityMatch;
     }).toList();
+
+    if (recurring) {
+      Set<int> seenRecurringIDs = {};
+      filteredTasks = filteredTasks.where((task) {
+        if (seenRecurringIDs.contains(task['RecurringID'])) {
+          return false;
+        }
+        seenRecurringIDs.add(task['RecurringID']);
+        return true;
+      }).toList();
+    }
+    return filteredTasks;
   }
 
   @override
@@ -130,10 +147,9 @@ class _MytasksPageState extends State<MytasksPage> {
                   ),
                 ),
               ),
-              // Botón de retroceso alineado a la izquierda
               Positioned(
-                left: 10, // Ajusta la posición izquierda
-                top: 10, // Ajusta la posición superior
+                left: 10,
+                top: 10,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () {
@@ -207,21 +223,75 @@ class _MytasksPageState extends State<MytasksPage> {
             ],
           ),
         ),
+        const SizedBox(height: 15),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildMenuItem("Tareas", 0),
+            _buildMenuItem("Rutinas", 1),
+          ],
+        ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: getFilteredTasks().length,
-            itemBuilder: (context, index) {
-              return buildTaskCard(getFilteredTasks()[index]);
-            },
-          ),
+          child: selectedIndex == 0
+              ? TaskList(
+                  tasks: getFilteredTasks(false), calendarData: calendarData)
+              : TaskList(
+                  tasks: getFilteredTasks(true), calendarData: calendarData),
         )
       ]),
     );
   }
 
+  Widget _buildMenuItem(String title, int index) {
+    bool isSelected = selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Color(0xFF882ACB) : Colors.black,
+            ),
+          ),
+          SizedBox(height: 4),
+          Container(
+            width: 80,
+            height: 3,
+            color: isSelected ? Color(0xFF882ACB) : Colors.transparent,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TaskList extends StatelessWidget {
+  final List<Map<String, dynamic>> tasks;
+  final Map<int, Map<String, dynamic>> calendarData;
+
+  const TaskList({required this.tasks, required this.calendarData, Key? key})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        return buildTaskCard(context, tasks[index]);
+      },
+    );
+  }
+
   /// Construye la tarjeta de cada tarea
-  Widget buildTaskCard(Map<String, dynamic> task) {
+  Widget buildTaskCard(BuildContext context, Map<String, dynamic> task) {
     int calendarID = task['StartTimestampID'] ?? -1;
     int hour = calendarData[calendarID]?['Hour'] ?? 23;
     int minute = calendarData[calendarID]?['Minute'] ?? 59;
@@ -250,7 +320,9 @@ class _MytasksPageState extends State<MytasksPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TaskPage(task: task),
+            builder: (context) => task['RecurringStart'] == true
+                ? RecurringPage(task: task)
+                : TaskPage(task: task),
           ),
         );
       },
@@ -268,13 +340,15 @@ class _MytasksPageState extends State<MytasksPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}",
-                  style: TextStyle(
+                if (task['RecurringStart'] == false)
+                  Text(
+                    "${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}",
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white), // Texto blanco
-                ), // Ícono de actividad
+                      color: Colors.white,
+                    ),
+                  ),
                 Text(
                   task['Title'] ?? 'Sin título',
                   style: TextStyle(

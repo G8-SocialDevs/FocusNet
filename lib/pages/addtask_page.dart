@@ -22,14 +22,15 @@ class _AddtaskPageState extends State<AddtaskPage> {
   final TextEditingController _startTimeController = TextEditingController();
   final TextEditingController _endTimeController = TextEditingController();
   int _selectedPriorityNum = 0;
+  String? selectedFrequency;
+  List<String> _selectedDaysLabels = [];
 
   String _selectedPriorityTxt = "Media";
   bool repeatActivity = false;
-  String selectedFrequency = 'diaria';
   List<bool> selectedDays = [false, false, false, false, false, false, false];
   List<bool> invitedFriends = [false, false, false];
 
-  final List<String> daysLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  final List<String> daysLabels = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
   final List<String> friends = ['Amigo 1', 'Amigo 2', 'Amigo 3'];
 
   Future<void> _selectDate() async {
@@ -95,7 +96,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
     }
   }
 
-  Future<bool> _register() async {
+  Future<bool> _addtask() async {
     if (_formKey.currentState!.validate()) {
       String title = _titleController.text;
       String description = _descriptionController.text;
@@ -104,9 +105,25 @@ class _AddtaskPageState extends State<AddtaskPage> {
           _formatToISO8601(_dateController.text, _startTimeController.text);
       String endTimestamp =
           _formatToISO8601(_dateController.text, _endTimeController.text);
+      String dayNameFrequency = _selectedDaysLabels.join(", ");
+      String frequency = selectedFrequency ?? "";
+      int ocurrences = 3;
 
       final url = Uri.parse(
-          'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/create_task');
+          'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/task/create_task');
+
+      final Map<String, dynamic> requestBody = {
+        "Title": title,
+        "Description": description,
+        "Priority": priority,
+        "CreatorID": widget.userId,
+        "StartTimestamp": startTimestamp,
+        "EndTimestamp": endTimestamp,
+        "RecurringStart": repeatActivity,
+        "Frequency": frequency,
+        "DayNameFrequency": dayNameFrequency,
+        "Occurrences": ocurrences
+      };
 
       final response = await http.post(
         url,
@@ -114,19 +131,17 @@ class _AddtaskPageState extends State<AddtaskPage> {
           'accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          "CreatorID": widget.userId,
-          "Title": title,
-          "Description": description,
-          "Priority": priority,
-          "StartTimestamp": startTimestamp,
-          "EndTimestamp": endTimestamp,
-          "RecurringStart": false
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      print("Enviando JSON: ${jsonEncode(requestBody)}");
 
       if (response.statusCode == 200) {
         print("Tarea creada con éxito: ${response.body}");
+        if (repeatActivity) {
+          _recurring();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registro exitoso de la actividad: $title')),
         );
@@ -137,6 +152,40 @@ class _AddtaskPageState extends State<AddtaskPage> {
       }
     }
     return false; // Si la validación falla
+  }
+
+  Future<void> _recurring() async {
+    String title = _titleController.text;
+    String description = _descriptionController.text;
+    int priority = _selectedPriorityNum;
+
+    String frequency = selectedFrequency ?? "";
+    String dayNameFrequency = _selectedDaysLabels.join(", ");
+
+    final url = Uri.parse(
+        'https://focusnet-task-service-194080380757.southamerica-west1.run.app/recurring/set_recurring/${widget.userId}');
+
+    final Map<String, dynamic> requestBody = {
+      "Title": title,
+      "Description": description,
+      "Priority": priority,
+      "Frequency": frequency,
+      "DayNameFrequency": dayNameFrequency,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(requestBody),
+    );
+    if (response.statusCode == 200) {
+      print("Recurrencia establecida con éxito: ${response.body}");
+    } else {
+      print("Error al establecer la recurrencia: ${response.statusCode}");
+    }
   }
 
   @override
@@ -376,7 +425,14 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                 value: repeatActivity,
                                 onChanged: (value) {
                                   setState(() {
+                                    // Si repeatActivity es false, limpiar los valores
                                     repeatActivity = value;
+                                    if (!repeatActivity) {
+                                      _selectedDaysLabels.clear();
+                                      selectedDays =
+                                          List.generate(7, (_) => false);
+                                      selectedFrequency = null;
+                                    }
                                   });
                                 },
                                 activeColor: Color(0xFF882ACB),
@@ -390,6 +446,12 @@ class _AddtaskPageState extends State<AddtaskPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Text(
+                                    "Seleccione una frecuencia o los días específicos.",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                    )),
+                                SizedBox(height: 15),
                                 //Frecuencia periodica
                                 Text("Frecuencia periódica",
                                     style: TextStyle(
@@ -398,6 +460,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                 SizedBox(height: 10),
                                 DropdownButtonFormField<String>(
                                   value: selectedFrequency,
+                                  hint: Text("Seleccione una frecuencia"),
                                   items: ['diaria', 'semanal', 'mensual']
                                       .map((String value) => DropdownMenuItem(
                                             value: value,
@@ -407,6 +470,11 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                   onChanged: (value) {
                                     setState(() {
                                       selectedFrequency = value!;
+
+                                      // Si se selecciona una frecuencia, deshabilitar los días seleccionados
+                                      _selectedDaysLabels.clear();
+                                      selectedDays =
+                                          List.generate(7, (_) => false);
                                     });
                                   },
                                   decoration: InputDecoration(
@@ -436,8 +504,21 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                   isSelected: selectedDays,
                                   onPressed: (index) {
                                     setState(() {
+                                      // Si se selecciona un día, resetear el dropdown
+                                      selectedFrequency = null;
+
+                                      // Alternar selección
                                       selectedDays[index] =
                                           !selectedDays[index];
+
+                                      // Actualizar lista de días seleccionados
+                                      if (selectedDays[index]) {
+                                        _selectedDaysLabels
+                                            .add(daysLabels[index]);
+                                      } else {
+                                        _selectedDaysLabels
+                                            .remove(daysLabels[index]);
+                                      }
                                     });
                                   },
                                   selectedColor: Colors.white,
@@ -493,6 +574,11 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                     _startTimeController.clear();
                                     _endTimeController.clear();
                                     _selectedPriorityTxt = "Media";
+                                    repeatActivity = false;
+                                    _selectedDaysLabels.clear();
+                                    selectedDays =
+                                        List.generate(7, (_) => false);
+                                    selectedFrequency = null;
                                     setState(() {});
                                   },
                                   icon: Icon(
@@ -516,7 +602,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                         const Color.fromRGBO(41, 190, 128, 1),
                                   ),
                                   onPressed: () async {
-                                    bool success = await _register();
+                                    bool success = await _addtask();
                                     if (success) {
                                       _titleController.clear();
                                       _descriptionController.clear();
@@ -524,6 +610,11 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       _startTimeController.clear();
                                       _endTimeController.clear();
                                       _selectedPriorityTxt = "Media";
+                                      repeatActivity = false;
+                                      _selectedDaysLabels.clear();
+                                      selectedDays =
+                                          List.generate(7, (_) => false);
+                                      selectedFrequency = null;
                                       setState(() {});
                                     }
                                   },
