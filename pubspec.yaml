@@ -65,6 +65,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
       - assets/images/focusnet_logo.png
+      - assets/images/post.jpg
+      - assets/images/profile.jpg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
