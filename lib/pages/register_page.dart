@@ -21,6 +21,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -71,8 +73,8 @@ class _RegisterPageState extends State<RegisterPage> {
       "Email": _emailController.text,
       "Password": _passwordController.text,
       "FirstName": _nameController.text,
-      "LastName": "None",
-      "UserName": "None",
+      "LastName": _lastnameController.text,
+      "UserName": _usernameController.text,
       "UserImage": "None",
       "Bio": "None",
       "PhoneNumber": _phoneController.text,
@@ -160,6 +162,36 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 30),
                     TextFormField(
                       controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombres',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese sus nombres';
+                        }
+                        return null;
+                      },
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: 30),
+                    TextFormField(
+                      controller: _lastnameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Apellidos',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese sus apellidos';
+                        }
+                        return null;
+                      },
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: 30),
+                    TextFormField(
+                      controller: _usernameController,
                       decoration: const InputDecoration(
                         labelText: 'Nombre de usuario',
                         prefixIcon: Icon(Icons.person),
@@ -286,7 +318,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                 ),
-              )
+              ),
+              SizedBox(height: 60),
             ],
           ),
         ),
