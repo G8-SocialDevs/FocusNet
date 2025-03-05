@@ -28,10 +28,17 @@ class _AddtaskPageState extends State<AddtaskPage> {
   String _selectedPriorityTxt = "Media";
   bool repeatActivity = false;
   List<bool> selectedDays = [false, false, false, false, false, false, false];
-  List<bool> invitedFriends = [false, false, false];
-
   final List<String> daysLabels = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
-  final List<String> friends = ['Amigo 1', 'Amigo 2', 'Amigo 3'];
+
+  List<Map<String, dynamic>> contacts = [];
+  List<String> friends = [];
+  List<bool> invitedFriends = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchContacts();
+  }
 
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
@@ -96,6 +103,39 @@ class _AddtaskPageState extends State<AddtaskPage> {
     }
   }
 
+//Traer la lista de contactos
+  Future<void> fetchContacts() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/contacts/list_contacts/${widget.userId}'),
+        headers: {'accept': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> loadedContacts =
+            List<Map<String, dynamic>>.from(json.decode(response.body));
+        setState(() {
+          contacts = loadedContacts;
+          extractFriendNames();
+        });
+      } else {
+        throw Exception('Error al cargar las tareas');
+      }
+    } catch (e) {
+      print('Error al obtener tareas: $e');
+    }
+  }
+
+  void extractFriendNames() {
+    setState(() {
+      friends = contacts
+          .map((contact) =>
+              "${contact['user']['FirstName']} ${contact['user']['LastName']}")
+          .toList();
+      invitedFriends = List.filled(friends.length, false);
+    });
+  }
+
   Future<bool> _addtask() async {
     if (_formKey.currentState!.validate()) {
       String title = _titleController.text;
@@ -107,7 +147,14 @@ class _AddtaskPageState extends State<AddtaskPage> {
           _formatToISO8601(_dateController.text, _endTimeController.text);
       String dayNameFrequency = _selectedDaysLabels.join(", ");
       String frequency = selectedFrequency ?? "";
-      int ocurrences = 3;
+      int ocurrences = 5;
+      // Filtrar los UserIDs de los contactos seleccionados
+      List<int> guestIDs = [];
+      for (int i = 0; i < contacts.length; i++) {
+        if (invitedFriends[i]) {
+          guestIDs.add(contacts[i]['user']['UserID']);
+        }
+      }
 
       final url = Uri.parse(
           'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/task/create_task');
@@ -122,7 +169,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
         "RecurringStart": repeatActivity,
         "Frequency": frequency,
         "DayNameFrequency": dayNameFrequency,
-        "Occurrences": ocurrences
+        "Occurrences": ocurrences,
+        "GuestIDs": guestIDs,
       };
 
       final response = await http.post(
@@ -579,6 +627,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                     selectedDays =
                                         List.generate(7, (_) => false);
                                     selectedFrequency = null;
+                                    invitedFriends = List.generate(
+                                        invitedFriends.length, (_) => false);
                                     setState(() {});
                                   },
                                   icon: Icon(
@@ -615,6 +665,8 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       selectedDays =
                                           List.generate(7, (_) => false);
                                       selectedFrequency = null;
+                                      invitedFriends = List.generate(
+                                          invitedFriends.length, (_) => false);
                                       setState(() {});
                                     }
                                   },

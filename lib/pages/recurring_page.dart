@@ -14,11 +14,13 @@ class RecurringPage extends StatefulWidget {
 
 class _RecurringPageState extends State<RecurringPage> {
   Map<int, Map<String, dynamic>> calendarData = {};
+  List<String> invitedFriends = [];
 
   @override
   void initState() {
     super.initState();
     fetchCalendarData();
+    fetchInvitedFriends();
   }
 
   /// Obtiene la información del calendario desde el endpoint calendar/get_calendar
@@ -92,6 +94,41 @@ class _RecurringPageState extends State<RecurringPage> {
     );
   }
 
+  Future<Map<String, dynamic>> fetchUserProfile(int userID) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/profiles/obtain_profile/$userID'),
+      headers: {'accept': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al obtener los datos del usuario');
+    }
+  }
+
+  Future<void> fetchInvitedFriends() async {
+    List<dynamic> attendees = widget.task['attendees'];
+    List<String> fetchedFriends = [];
+
+    for (var attendee in attendees) {
+      int userID = attendee['UserID'];
+      try {
+        Map<String, dynamic> userProfile = await fetchUserProfile(userID);
+        String fullName =
+            '${userProfile["FirstName"]} ${userProfile["LastName"]}';
+        fetchedFriends.add(fullName);
+      } catch (e) {
+        print('Error al obtener usuario $userID: $e');
+      }
+    }
+
+    setState(() {
+      invitedFriends = fetchedFriends;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     int calendarID_start = widget.task['StartTimestampID'] ?? -1;
@@ -162,6 +199,9 @@ class _RecurringPageState extends State<RecurringPage> {
                 _buildSectionTitle("Nivel de prioridad"),
                 _buildPriorityButton(widget.task['Priority']),
                 const SizedBox(height: 20),
+                _buildFrequency(widget.task['Recurring']['Frequency'] ?? "",
+                    widget.task['Recurring']['DayNameFrequency'] ?? ""),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(child: _buildTimeField("Hora inicio", start_time)),
@@ -170,8 +210,8 @@ class _RecurringPageState extends State<RecurringPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildSectionTitle("Amigos Invitados"),
-                _buildInvitedFriends(widget.task['Friends'] ?? []),
+                _buildSectionTitle("Compañeros de rutina"),
+                _buildInvitedFriends(invitedFriends),
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -309,7 +349,7 @@ class _RecurringPageState extends State<RecurringPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         _buildReadOnlyField(time, icon: Icons.access_time),
@@ -320,7 +360,7 @@ class _RecurringPageState extends State<RecurringPage> {
   Widget _buildInvitedFriends(List<dynamic> friends) {
     if (friends.isEmpty) {
       return const Text(
-        "No hay amigos invitados para esta actividad.",
+        "No tienes amigos con la misma actividad.",
         style: TextStyle(fontSize: 16),
       );
     }
@@ -328,12 +368,91 @@ class _RecurringPageState extends State<RecurringPage> {
       children: friends.map((friend) {
         return Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.green),
+            const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 28,
+            ),
             const SizedBox(width: 8),
-            Text(friend),
+            Text(
+              friend,
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 40),
           ],
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildFrequency(String freq, String days) {
+    String frequency = freq.trim();
+    String dayNameFrequency = days.trim();
+
+    List<String> daysLabels = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
+    List<String> activeDays = dayNameFrequency.split(',');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (frequency
+            .isNotEmpty) // Si la frecuencia es diaria, semanal o mensual
+          RichText(
+            text: TextSpan(
+              style: TextStyle(fontSize: 18, color: Colors.black),
+              children: [
+                TextSpan(
+                  text: "Frecuencia: ",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextSpan(
+                  text: frequency,
+                ),
+              ],
+            ),
+          )
+        else if (dayNameFrequency.isNotEmpty) // Si tiene días específicos
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Frecuencia en días",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: daysLabels.map((label) {
+                  bool isSelected = activeDays.contains(label);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected ? Color(0xFF882ACB) : Colors.transparent,
+                        border: Border.all(
+                            color:
+                                isSelected ? Color(0xFF882ACB) : Colors.grey),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          )
+      ],
     );
   }
 }

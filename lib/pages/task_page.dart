@@ -14,11 +14,13 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPageState extends State<TaskPage> {
   Map<int, Map<String, dynamic>> calendarData = {};
+  List<String> invitedFriends = [];
 
   @override
   void initState() {
     super.initState();
     fetchCalendarData();
+    fetchInvitedFriends();
   }
 
   /// Obtiene la información del calendario desde el endpoint calendar/get_calendar
@@ -89,6 +91,41 @@ class _TaskPageState extends State<TaskPage> {
         );
       },
     );
+  }
+
+  Future<Map<String, dynamic>> fetchUserProfile(int userID) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/profiles/obtain_profile/$userID'),
+      headers: {'accept': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al obtener los datos del usuario');
+    }
+  }
+
+  Future<void> fetchInvitedFriends() async {
+    List<dynamic> attendees = widget.task['attendees'];
+    List<String> fetchedFriends = [];
+
+    for (var attendee in attendees) {
+      int userID = attendee['UserID'];
+      try {
+        Map<String, dynamic> userProfile = await fetchUserProfile(userID);
+        String fullName =
+            '${userProfile["FirstName"]} ${userProfile["LastName"]}';
+        fetchedFriends.add(fullName);
+      } catch (e) {
+        print('Error al obtener usuario $userID: $e');
+      }
+    }
+
+    setState(() {
+      invitedFriends = fetchedFriends;
+    });
   }
 
   @override
@@ -173,8 +210,8 @@ class _TaskPageState extends State<TaskPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildSectionTitle("Amigos Invitados"),
-                _buildInvitedFriends(widget.task['Friends'] ?? []),
+                _buildSectionTitle("Participantes de la actividad"),
+                _buildInvitedFriends(invitedFriends),
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -332,7 +369,7 @@ class _TaskPageState extends State<TaskPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         _buildReadOnlyField(time, icon: Icons.access_time),
@@ -343,7 +380,7 @@ class _TaskPageState extends State<TaskPage> {
   Widget _buildInvitedFriends(List<dynamic> friends) {
     if (friends.isEmpty) {
       return const Text(
-        "No hay amigos invitados para esta actividad.",
+        "No tienes amigos con la misma actividad.",
         style: TextStyle(fontSize: 16),
       );
     }
@@ -351,9 +388,17 @@ class _TaskPageState extends State<TaskPage> {
       children: friends.map((friend) {
         return Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.green),
+            const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 28,
+            ),
             const SizedBox(width: 8),
-            Text(friend),
+            Text(
+              friend,
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 40),
           ],
         );
       }).toList(),

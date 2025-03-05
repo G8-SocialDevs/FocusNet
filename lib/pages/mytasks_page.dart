@@ -114,10 +114,10 @@ class _MytasksPageState extends State<MytasksPage>
     if (recurring) {
       Set<int> seenRecurringIDs = {};
       filteredTasks = filteredTasks.where((task) {
-        if (seenRecurringIDs.contains(task['RecurringID'])) {
+        if (seenRecurringIDs.contains(task['Recurring']['RecurringID'])) {
           return false;
         }
-        seenRecurringIDs.add(task['RecurringID']);
+        seenRecurringIDs.add(task['Recurring']['RecurringID']);
         return true;
       }).toList();
     }

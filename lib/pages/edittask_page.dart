@@ -24,6 +24,8 @@ class _EditTaskPageState extends State<EditTaskPage> {
   late TextEditingController _dateController;
   late TextEditingController _startTimeController;
   late TextEditingController _endTimeController;
+  List<String> friends = [];
+  List<bool> invitedFriends = [];
 
   // Variables de fecha
   late int calendarID_start;
@@ -70,6 +72,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
             "${hour_end.toString().padLeft(2, '0')}:${minute_end.toString().padLeft(2, '0')}");
 
     fetchCalendarDataAndUpdate();
+    fetchInvitedFriends();
   }
 
 // Función para obtener los datos y actualizar el estado
@@ -108,6 +111,17 @@ class _EditTaskPageState extends State<EditTaskPage> {
       String endTimestamp =
           _formatToISO8601(_dateController.text, _endTimeController.text);
 
+      List<int> guestIDs = [];
+      List<dynamic> attendees = widget.task['attendees'] ?? [];
+
+      for (int i = 0; i < friends.length; i++) {
+        if (invitedFriends[i]) {
+          if (i < attendees.length) {
+            guestIDs.add(attendees[i]['UserID']);
+          }
+        }
+      }
+
       final url = Uri.parse(
           'https://focusnet-task-service-194080380757.southamerica-west1.run.app/task/update');
 
@@ -125,6 +139,7 @@ class _EditTaskPageState extends State<EditTaskPage> {
           "RecurringStart": false,
           "StartTimestamp": startTimestamp,
           "EndTimestamp": endTimestamp,
+          "GuestIDs": guestIDs,
         }),
       );
 
@@ -140,6 +155,42 @@ class _EditTaskPageState extends State<EditTaskPage> {
       }
     }
     return false; // Si la validación falla
+  }
+
+  Future<void> fetchInvitedFriends() async {
+    List<dynamic> attendees = widget.task['attendees'];
+    List<String> fetchedFriends = [];
+
+    for (var attendee in attendees) {
+      int userID = attendee['UserID'];
+      try {
+        Map<String, dynamic> userProfile = await fetchUserProfile(userID);
+        String fullName =
+            '${userProfile["FirstName"]} ${userProfile["LastName"]}';
+        fetchedFriends.add(fullName);
+      } catch (e) {
+        print('Error al obtener usuario $userID: $e');
+      }
+    }
+
+    setState(() {
+      friends = fetchedFriends;
+      invitedFriends = List.filled(friends.length, true);
+    });
+  }
+
+  Future<Map<String, dynamic>> fetchUserProfile(int userID) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://focusnet-user-auth-service-194080380757.southamerica-west1.run.app/profiles/obtain_profile/$userID'),
+      headers: {'accept': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al obtener los datos del usuario');
+    }
   }
 
   /// Obtiene la información del calendario desde el endpoint calendar/get_calendar
@@ -458,6 +509,28 @@ class _EditTaskPageState extends State<EditTaskPage> {
                                   ),
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: 20),
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text("Participantes de la actividad",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            Column(
+                              children: List.generate(friends.length, (index) {
+                                return CheckboxListTile(
+                                  title: Text(friends[index]),
+                                  value: invitedFriends[index],
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      invitedFriends[index] = value!;
+                                    });
+                                  },
+                                  activeColor: Color(0xFF882ACB),
+                                );
+                              }),
                             ),
                             const SizedBox(height: 50),
                             Row(
