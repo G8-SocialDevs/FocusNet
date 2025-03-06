@@ -42,7 +42,9 @@ class _RecurringPageState extends State<RecurringPage> {
   }
 
   Future<bool> deleteRecurring() async {
-    int recurringId = widget.task['RecurringID'];
+    int recurringId = widget.task['Recurring']['RecurringID'];
+    print(widget.task['TaskID'].toString());
+    print(recurringId.toString());
     final url = Uri.parse(
         'https://focusnet-task-service-194080380757.southamerica-west1.run.app/recurring/recurring/delete/$recurringId');
 
@@ -423,7 +425,8 @@ class _RecurringPageState extends State<RecurringPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: daysLabels.map((label) {
-                  bool isSelected = activeDays.contains(label);
+                  bool isSelected =
+                      activeDays.map((day) => day.trim()).contains(label);
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),

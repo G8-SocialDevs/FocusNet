@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:numberpicker/numberpicker.dart';
 
 class AddtaskPage extends StatefulWidget {
   static const String routename = '/addtask';
@@ -24,6 +25,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
   int _selectedPriorityNum = 0;
   String? selectedFrequency;
   List<String> _selectedDaysLabels = [];
+  int selectedOccurrences = 10;
 
   String _selectedPriorityTxt = "Media";
   bool repeatActivity = false;
@@ -147,7 +149,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
           _formatToISO8601(_dateController.text, _endTimeController.text);
       String dayNameFrequency = _selectedDaysLabels.join(", ");
       String frequency = selectedFrequency ?? "";
-      int ocurrences = 5;
+      int ocurrences = selectedOccurrences;
       // Filtrar los UserIDs de los contactos seleccionados
       List<int> guestIDs = [];
       for (int i = 0; i < contacts.length; i++) {
@@ -575,6 +577,39 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                 ),
 
                                 SizedBox(height: 20),
+                                Text("Número de repeticiones",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
+                                SizedBox(height: 15),
+                                Center(
+                                  child: NumberPicker(
+                                    value: selectedOccurrences,
+                                    minValue: 1,
+                                    maxValue: 20,
+                                    step: 1,
+                                    itemHeight: 50,
+                                    axis: Axis
+                                        .horizontal, // Puedes cambiar a Axis.vertical si lo prefieres
+                                    selectedTextStyle: TextStyle(
+                                      fontSize:
+                                          24, // Tamaño del número seleccionado
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors
+                                          .purple, // Color morado al número central
+                                    ),
+                                    textStyle: TextStyle(
+                                      fontSize:
+                                          18, // Tamaño de los números no seleccionados
+                                      color: Colors
+                                          .grey, // Color gris para los números de los lados
+                                    ),
+                                    onChanged: (value) => setState(
+                                        () => selectedOccurrences = value),
+                                  ),
+                                ),
+
+                                SizedBox(height: 20),
                               ],
                             ),
                           ),
@@ -629,6 +664,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                     selectedFrequency = null;
                                     invitedFriends = List.generate(
                                         invitedFriends.length, (_) => false);
+                                    selectedOccurrences = 10;
                                     setState(() {});
                                   },
                                   icon: Icon(
@@ -667,6 +703,7 @@ class _AddtaskPageState extends State<AddtaskPage> {
                                       selectedFrequency = null;
                                       invitedFriends = List.generate(
                                           invitedFriends.length, (_) => false);
+                                      selectedOccurrences = 10;
                                       setState(() {});
                                     }
                                   },

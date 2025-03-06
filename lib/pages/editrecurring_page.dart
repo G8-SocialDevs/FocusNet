@@ -33,7 +33,7 @@ class _EditRecurringPageState extends State<EditRecurringPage> {
 
   Future<bool> _updateTask() async {
     if (_formKey.currentState!.validate()) {
-      int recurringId = widget.task['RecurringID'];
+      int recurringId = widget.task['Recurring']['RecurringID'];
       String title = _titleController.text;
       String description = _descriptionController.text;
       int priority = _priority;

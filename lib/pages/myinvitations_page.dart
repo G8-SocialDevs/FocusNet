@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:focusnet/pages/taskinvitation_page.dart';
+import 'package:focusnet/pages/recurringinvitation_page.dart';
 
 class MyinvitationsPage extends StatefulWidget {
   static const String routeName = '/myinvitations';
@@ -348,6 +350,7 @@ class InvitationsList extends StatelessWidget {
   Widget buildInvitationCard(BuildContext context,
       Map<String, dynamic> invitation, String invitationText) {
     Color containerColor = Color(0xFFFFF9C4);
+    int recurringTaskID = 0;
 
     // Buscar la tarea correspondiente a la invitación
     Map<String, dynamic>? task;
@@ -362,6 +365,7 @@ class InvitationsList extends StatelessWidget {
         (task) => task['RecurringID'] == invitation['RecurringID'],
         orElse: () => {},
       );
+      recurringTaskID = task['TaskID'] ?? 0;
     } else {
       task = {};
     }
@@ -377,24 +381,42 @@ class InvitationsList extends StatelessWidget {
         : 'Tarea no encontrada';
 
     String recurrenceInfo = "";
-    if (task.isNotEmpty && invitation['RecurringID'] != null) {
-      recurrenceInfo = task['recurring']?['Frequency'] ??
-          task['recurring']?['DayFrequency'] ??
-          "Sin frecuencia";
+    if (task.isNotEmpty && task['RecurringStart'] == true) {
+      if (task['recurring'] != null) {
+        if (task['recurring']['Frequency'] != null &&
+            task['recurring']['Frequency'].toString().isNotEmpty) {
+          recurrenceInfo = task['recurring']['Frequency'];
+        } else if (task['recurring']['DayNameFrequency'] != null) {
+          recurrenceInfo = task['recurring']['DayNameFrequency'];
+        } else {
+          recurrenceInfo = "Sin frecuencia";
+        }
+      } else {
+        recurrenceInfo = "Sin frecuencia";
+      }
     }
+    print(recurrenceInfo);
 
     return GestureDetector(
       onTap: () {
-        /*
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => task['RecurringStart'] == true
-                ? RecurringPage(task: task)
-                : TaskPage(task: task),
+            builder: (context) => (task?['RecurringStart'] ?? false)
+                ? RecurringInvitationPage(
+                    userId: task?['CreatorID'] ?? 0,
+                    invitationId: invitation['InvitationID'],
+                    taskId: recurringTaskID ?? 0,
+                    isFromR: isFromR,
+                  )
+                : TaskInvitationPage(
+                    userId: task?['CreatorID'] ?? 0,
+                    invitationId: invitation['InvitationID'],
+                    taskId: task?['TaskID'] ?? 0,
+                    isFromR: isFromR,
+                  ),
           ),
         );
-        */
       },
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
@@ -417,17 +439,40 @@ class InvitationsList extends StatelessWidget {
                         Text(
                           "${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}",
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0D47A1),
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 2,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
                         )
                       else
                         Text(
                           recurrenceInfo,
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0D47A1),
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 2,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
                         ),
                       Text(
                         "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF0D47A1),
+                        ),
                       ),
                     ],
                   ),
