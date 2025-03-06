@@ -20,13 +20,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       backgroundColor: const Color(0xFF882ACB),
       elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white), // Asegura que los iconos sean blancos
+      iconTheme: const IconThemeData(color: Colors.white), 
       leading: showBackButton
           ? IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             )
-          : null, // Si `showBackButton` es false, no muestra la flecha
+          : null, 
       actions: [
         PopupMenuButton<String>(
           onSelected: (value) async {
