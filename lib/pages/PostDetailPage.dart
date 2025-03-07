@@ -1,142 +1,170 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:focusnet/pages/comment_dialog.dart';
+import 'package:http/http.dart' as http;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 
-class PostDetailPage extends StatelessWidget {
-  final String username;
-  final String profileImage;
-  final String time;
-  final String postText;
-  final String postImage;
+class PostDetailPage extends StatefulWidget {
+  final int publicationId;
 
-  const PostDetailPage({
-    Key? key,
-    required this.username,
-    required this.profileImage,
-    required this.time,
-    required this.postText,
-    required this.postImage,
-  }) : super(key: key);
+  const PostDetailPage({Key? key, required this.publicationId}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF882ACB),
-        title: const Text('Publicación', style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Column(
-        children: [
-          Card(
-            margin: const EdgeInsets.all(8.0),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: AssetImage(profileImage),
-                  ),
-                  title: Text(
-                    username,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(time),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text(postText),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: _buildPostImage(postImage),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline, color: Colors.purple),
-                        onPressed: () {
-                          showCommentDialog(context);
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.thumb_up_alt_outlined, color: Colors.purple),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/profile.jpg'),
-                    ),
-                    title: const Text('Speed', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text(
-                      '"¡Organización es clave! Tener un plan claro para las tareas universitarias ayuda a evitar el estrés y mejorar el rendimiento.',
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+  _PostDetailPageState createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends State<PostDetailPage> {
+  bool isLoading = true;
+  Map<String, dynamic>? publicationDetails;
+  final String postDetailApiUrl = 'https://focusnet-social-service-194080380757.southamerica-west1.run.app/publication/obtain_publication/';
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPublicationDetails();
+  }
+
+  Future<void> fetchPublicationDetails() async {
+    try {
+      final response = await http.get(Uri.parse('$postDetailApiUrl${widget.publicationId}'));
+      if (response.statusCode == 200) {
+        setState(() {
+          publicationDetails = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        print("Error al obtener el detalle de la publicación: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error en la solicitud: $e");
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      DateTime parsedDate = DateTime.parse(dateString);
+      return DateFormat('dd MMM yyyy, HH:mm', 'es').format(parsedDate);
+    } catch (e) {
+      return dateString; 
+    }
   }
 
   Widget _buildPostImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
-      return Image.asset(
-        'assets/images/post.jpg',
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
+      return Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Image.asset('assets/images/post.jpg', height: 200, width: double.infinity, fit: BoxFit.cover),
       );
     }
-
-    Uri? uri = Uri.tryParse(imageUrl);
-    if (uri != null && uri.hasScheme && (uri.scheme == "http" || uri.scheme == "https")) {
-      return Image.network(
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Image.network(
         imageUrl,
         height: 200,
         width: double.infinity,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            'assets/images/post.jpg',
-            height: 200,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          );
+          return Image.asset('assets/images/post.jpg', height: 200, width: double.infinity, fit: BoxFit.cover);
         },
-      );
-    } else {
-      return Image.asset(
-        'assets/images/post.jpg',
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      );
-    }
+      ),
+    );
+  }
+
+  Widget _buildCommentField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: TextField(
+        controller: _commentController,
+        decoration: InputDecoration(
+          hintText: 'Escribe un comentario...',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30.0)),
+          prefixIcon: Icon(Icons.comment, color: Colors.grey),
+          suffixIcon: IconButton(
+            icon: Icon(Icons.send, color: Colors.blue),
+            onPressed: () {
+              if (_commentController.text.isNotEmpty) {
+                print('Comentario enviado: ${_commentController.text}');
+                _commentController.clear();  // Limpiar campo después de enviar
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.purple,
+        title: const Text('Detalle de Publicación'),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : publicationDetails == null
+              ? const Center(child: Text("No se encontró la publicación"))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundImage: AssetImage('assets/images/profile.jpg'),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Usuario ${publicationDetails!['UserID']}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          Spacer(),
+                          Text(
+                            _formatDate(publicationDetails!['Date']),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        publicationDetails!['ContentPubli'],
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPostImage(publicationDetails!['ImagePubli']),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(FontAwesomeIcons.comment, color: Colors.purple),
+                            onPressed: () {
+                              print('Mostrar comentarios');
+                            },
+                          ),
+                          Text('${publicationDetails!['CommentCount']}'),
+                          const SizedBox(width: 20),
+                          IconButton(
+                            icon: const Icon(FontAwesomeIcons.heart, color: Colors.purple),
+                            onPressed: () {
+                              print('Mostrar reacciones');
+                            },
+                          ),
+                          Text('${publicationDetails!['ReactionCount']}'),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildCommentField(),
+                    ],
+                  ),
+                ),
+    );
   }
 }
